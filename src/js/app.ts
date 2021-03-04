@@ -1,5 +1,5 @@
 import { setUser } from './setUser';
-import { addEvents } from './utils'
+import { addEvents, toggleAuthDom } from './utils'
 
 export const init = () => {
   setUser.initUser();

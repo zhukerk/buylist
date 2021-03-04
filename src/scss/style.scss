@@ -17,6 +17,7 @@
 
 $transition: all 0.2s linear;
 $theme-color: #7d93c8;
+$dark-blue: #32448c;
 
 %text-overflow {
   white-space: nowrap;
@@ -70,7 +71,7 @@ body {
     font-size: 16px;
     color: #fff;
 
-    background-color: #32448c;
+    background-color: $dark-blue;
 
     transition: $transition;
 
@@ -127,7 +128,7 @@ body {
       position: absolute;
       width: 25px;
       height: 3px;
-      background-color: #32448c;
+      background-color: $dark-blue;
 
       transition: $transition;
     }
@@ -163,6 +164,57 @@ body {
 
   &__is-visible {
     display: flex;
+  }
+}
+
+.log-out {
+  display: none;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+
+  position: absolute;
+  right: 0;
+  top: 0;
+
+  width: 250px;
+
+  padding: 10px;
+  color: $dark-blue;
+  background-color: #81b622;
+
+  &__is-open {
+    display: grid;
+  }
+
+  &__email {
+    grid-column: -1 / 1;
+
+    font-size: 16px;
+
+    @extend %text-overflow;
+  }
+
+  &__btn {
+    padding: 10px;
+
+    width:  50%;
+    color: $dark-blue;
+    background-color: #fff;
+  }
+
+  &__exit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+
+    font-size: 25px;
+    width: 30px;
+    height: 30px;
+
+    color: $dark-blue;
+    background-color: #fff;
   }
 }
 
@@ -382,7 +434,7 @@ body {
 
       background: #e1e5ea;
       background-position: center center;
-      border: 1px solid #32448c;
+      border: 1px solid $dark-blue;
       border-radius: 4px;
       box-sizing: border-box;
       box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.15);
@@ -545,7 +597,7 @@ body {
     position: absolute;
     width: 25px;
     height: 3px;
-    background-color: #32448c;
+    background-color: $dark-blue;
   }
 
   & > span::before {
@@ -573,7 +625,7 @@ body {
   font-size: 40px;
   font-weight: 700;
 
-  background-color: #32448c;
+  background-color: $dark-blue;
 }
 
 .modal {

@@ -22,7 +22,12 @@
       </div>
       <a href="#" class="logo">buylist</a>
       <button class="header__authorization">Sign in</button>
-      <button class="user">U</button>
+      <button class="user"></button>
+      <div class="log-out">
+        <p class="log-out__email"></p>
+        <button class="log-out__btn">Log out</button>
+        <button class="log-out__exit">x</button>
+      </div>
     </header>
 
     <aside class="sidebar">
@@ -54,6 +59,8 @@
 
     <main class="main">
       <div class="lists">
+
+    <label class="shoplist__add-input-label" for="add-item">+</label>
         <div class="list-elem">
           <h2 class="list-elem__name">
             Lorem ipsum dolor sit amet consectetur adipisicing elit Lorem ipsum dolor sit amet, consectetur adipisicing
@@ -111,9 +118,16 @@
       <form class="authorization__form">
         <button class="authorization__close">x</button>
         <div class="authorization__title">Authorization</div>
-        <input class="authorization__input authorization__input-email" type="email" name="email" minlength="3" required placeholder="Your email" />
         <input
-          class="authorization__input authorization__input-email-pass"
+          class="authorization__input authorization__input-email"
+          type="email"
+          name="email"
+          minlength="3"
+          required
+          placeholder="Your email"
+        />
+        <input
+          class="authorization__input authorization__input-pass"
           type="password"
           name="password"
           minlength="3"

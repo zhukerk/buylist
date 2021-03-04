@@ -118,6 +118,7 @@ h6 {
   font-style: normal;
 }
 
+.log-out__email,
 .settings__acc-name,
 .settings__acc-email {
   white-space: nowrap;
@@ -291,6 +292,56 @@ body {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
+}
+
+.log-out {
+  display: none;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 250px;
+  padding: 10px;
+  color: #32448c;
+  background-color: #81b622;
+}
+
+.log-out__is-open {
+  display: grid;
+}
+
+.log-out__email {
+  grid-column: -1 / 1;
+  font-size: 16px;
+}
+
+.log-out__btn {
+  padding: 10px;
+  width: 50%;
+  color: #32448c;
+  background-color: #fff;
+}
+
+.log-out__exit {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  padding: 10px;
+  font-size: 25px;
+  width: 30px;
+  height: 30px;
+  color: #32448c;
+  background-color: #fff;
 }
 
 .main {

@@ -23,7 +23,8 @@ export const authorizationBtnSignIn: HTMLAnchorElement = authorizationForm.query
 export const logOut: HTMLDivElement = document.querySelector('.log-out');
 export const logOutEmail: HTMLParagraphElement = document.querySelector('.log-out__email');
 export const logOutBtn: HTMLButtonElement = logOut.querySelector('.log-out__btn');
-export const logOutExit: HTMLButtonElement = logOut.querySelector('.log-out__exit');
+export const logOutCloseBtn: HTMLButtonElement = logOut.querySelector('.log-out__close-btn');
+export const listsElem: HTMLDivElement = document.querySelector('.lists');
 
 export function toggleAuthDom(): void {
   console.log(setUser.user);
@@ -31,7 +32,7 @@ export function toggleAuthDom(): void {
   if (setUser.user) {
     headerAuthorization.style.display = 'none';
     userBtn.style.display = '';
-    authorization.classList.remove('authorization__is-open');
+    authorization.classList.remove('authorization_is-open');
   } else {
     console.log('no setUser');
 
@@ -40,21 +41,49 @@ export function toggleAuthDom(): void {
   }
 }
 
+export function createElemWithClass(elem: string, elemClass: string): HTMLElement {
+  const element = document.createElement(elem);
+  element.className = elemClass;
+  return element;
+}
+
+export function openCloseOptionsEvent(openBtn: Element, optionsElem: Element, optionsElemClass: string) {
+  openBtn.addEventListener('click', function openElem() {
+    optionsElem.classList.add(`${optionsElemClass}_is-open`);
+    openBtn.removeEventListener('click', openElem);
+
+    setTimeout(() => {
+      document.addEventListener('click', function closePopUp(event) {
+        const target: Element = event.target as Element;
+
+        if (
+          target !== optionsElem &&
+          !(target.closest(`.${optionsElemClass}`) && !target.classList.contains(`${optionsElemClass}__close-btn`))
+        ) {
+          optionsElem.classList.remove(`${optionsElemClass}_is-open`);
+          document.removeEventListener('click', closePopUp);
+          openBtn.addEventListener('click', openElem);
+        }
+      });
+    });
+  });
+}
+
 export const addEvents: Function = (): void => {
   headerAuthorization.addEventListener('click', function (event) {
-    authorization.classList.add('authorization__is-open');
+    authorization.classList.add('authorization_is-open');
   });
 
   authorization.addEventListener('click', function (event) {
     if (event.target === authorization) {
-      authorization.classList.remove('authorization__is-open');
+      authorization.classList.remove('authorization_is-open');
     }
   });
 
   authorizationClose.addEventListener('click', function (event) {
     event.preventDefault();
     if (event.target === authorizationClose) {
-      authorization.classList.remove('authorization__is-open');
+      authorization.classList.remove('authorization_is-open');
     }
   });
 
@@ -68,21 +97,33 @@ export const addEvents: Function = (): void => {
     setUser.signUp(authorizationInputEmail.value, authorizationInputPass.value);
   });
 
-  userBtn.addEventListener('click', function () {
-    logOut.classList.add('log-out__is-open');
-  });
+  openCloseOptionsEvent(userBtn, logOut, 'log-out');
 
   logOutBtn.addEventListener('click', function () {
-    logOut.classList.remove('log-out__is-open');
+    logOut.classList.remove('log-out_is-open');
     setUser.logOut();
   });
 
-  logOutExit.addEventListener('click', function () {
-    logOut.classList.remove('log-out__is-open');
+  logOutCloseBtn.addEventListener('click', function () {
+    logOut.classList.remove('log-out_is-open');
   });
 
   authorizationBtnSignIn.addEventListener('click', function (event) {
     event.preventDefault();
     setUser.signIn(authorizationInputEmail.value, authorizationInputPass.value);
+  });
+
+  modalNewList.addEventListener('click', function (event) {
+    if ((event.target as Element).classList.contains('modal') ) {
+      modalNewList.classList.remove('modal_is-open');
+      const input: HTMLInputElement = modalNewList.querySelector('.modal__input');
+      input.value = '';
+    }
+  });
+
+  modalRenameList.addEventListener('click', function (event) {
+    if ((event.target as Element).classList.contains('modal') ) {
+      modalRenameList.classList.remove('modal_is-open');
+    }
   });
 };

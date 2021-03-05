@@ -183,7 +183,7 @@ body {
   color: $dark-blue;
   background-color: #81b622;
 
-  &__is-open {
+  &_is-open {
     display: grid;
   }
 
@@ -203,7 +203,7 @@ body {
     background-color: #fff;
   }
 
-  &__exit {
+  &__close-btn {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -320,11 +320,12 @@ body {
       width: 100px;
       background-color: #ccc;
 
-      &_is-visible {
+      &_is-open {
         display: block;
       }
 
       &-elem {
+        display: block;
         padding: 5px;
         width: 100%;
         color: #000;
@@ -461,7 +462,7 @@ body {
   }
 
   &__add {
-    &-list {
+    &-item {
       position: relative;
       padding: 10px 20px 10px 60px;
       width: 70%;
@@ -639,7 +640,7 @@ body {
 
   background-color: rgba(100, 100, 100, 0.5);
 
-  &__is-open {
+  &_is-open {
     display: block;
   }
 
@@ -772,7 +773,7 @@ body {
     }
   }
 
-  &__is-open {
+  &_is-open {
     display: flex;
   }
 }

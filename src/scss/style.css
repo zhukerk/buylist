@@ -310,7 +310,7 @@ body {
   background-color: #81b622;
 }
 
-.log-out__is-open {
+.log-out_is-open {
   display: grid;
 }
 
@@ -326,7 +326,7 @@ body {
   background-color: #fff;
 }
 
-.log-out__exit {
+.log-out__close-btn {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -458,11 +458,12 @@ body {
   background-color: #ccc;
 }
 
-.list-elem__options-list_is-visible {
+.list-elem__options-list_is-open {
   display: block;
 }
 
 .list-elem__options-list-elem {
+  display: block;
   padding: 5px;
   width: 100%;
   color: #000;
@@ -581,7 +582,7 @@ body {
   background-color: #fff;
 }
 
-.shoplist__add-list {
+.shoplist__add-item {
   position: relative;
   padding: 10px 20px 10px 60px;
   width: 70%;
@@ -774,7 +775,7 @@ body {
   background-color: rgba(100, 100, 100, 0.5);
 }
 
-.modal__is-open {
+.modal_is-open {
   display: block;
 }
 
@@ -905,7 +906,7 @@ body {
   color: #7d93c8;
 }
 
-.authorization__is-open {
+.authorization_is-open {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;

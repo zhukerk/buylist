@@ -1,5 +1,6 @@
 import { firebase } from '../index';
-import { regExpValidEmail, toggleAuthDom, logOutEmail, userBtn } from './utils';
+import { regExpValidEmail, toggleAuthDom, logOutEmail, userBtn, contentElem } from './utils';
+import { render } from './render';
 
 interface IsetUser {
   user: object | null;
@@ -23,6 +24,22 @@ export const setUser: IsetUser = {
         if (this.user.displayName) {
           this.updateUserInfo();
         }
+
+        let uid = (setUser.user as any).uid;
+        contentElem.classList.add('lists');
+
+        firebase
+          .database()
+          .ref(`${uid}/lists`)
+          .on('value', (snapshot) => {
+            let dbLists = snapshot.val() || [];
+
+            if (contentElem.classList.contains('lists')) render.lists(dbLists);
+            // render.lists(dbLists)
+            // if (contentElem.classList.contains('list')) render.list(0);
+          });
+      } else {
+        contentElem.className = 'content';
       }
     });
   },
@@ -70,19 +87,17 @@ export const setUser: IsetUser = {
           .then(() => {
             this.updateUserInfo();
 
-            (async () => {
-              let dbUsers: string[] = [];
+            let dbUsers: string[] = [];
 
-              await firebase
-                .database()
-                .ref('users')
-                .on('value', (snapshot) => {
-                  dbUsers = snapshot.val() || [];
-                });
-
-              dbUsers.push(email);
-              firebase.database().ref(`users`).set(dbUsers);
-            })();
+            firebase
+              .database()
+              .ref('users')
+              .get()
+              .then((snapshot) => {
+                dbUsers = snapshot.val() || [];
+                dbUsers.push(email);
+                firebase.database().ref(`users`).set(dbUsers);
+              });
           });
       })
       .catch((err) => {
@@ -107,15 +122,6 @@ export const setUser: IsetUser = {
 
   sendForget(email) {
     if (!regExpValidEmail.test(email)) return alert('email is not valid');
-
-    // let dbUsers: string[] = [];
-
-    // firebase
-    //   .database()
-    //   .ref('users')
-    //   .on('value', (snapshot) => {
-    //     dbUsers = snapshot.val() || [];
-    //   });
 
     firebase
       .auth()

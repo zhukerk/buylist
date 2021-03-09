@@ -1,5 +1,22 @@
 import { firebase } from '..';
+import { render } from './render';
 import { setUser } from './setUser';
+
+export interface Ilist {
+  listName: string;
+  items?: { toBuy?: IlistItem[]; purchased?: IlistItem[] };
+}
+
+export interface IlistItems {
+  toBuy?: IlistItem[];
+  purchased?: IlistItem[];
+}
+
+export interface IlistItem {
+  itemName: string;
+  quantity: number;
+  unit: string;
+}
 
 export const regExpValidEmail: RegExp = /^\w+@\w+\.\w{2,}$/;
 
@@ -7,11 +24,15 @@ export const burgerMenu: HTMLDivElement = document.querySelector('.burger-menu')
 export const headerAuthorization: HTMLButtonElement = document.querySelector('.header__authorization');
 export const userBtn: HTMLButtonElement = document.querySelector('.user');
 export const sidebar: HTMLElement = document.querySelector('.sidebar');
-export const sidebarLinkList: HTMLAnchorElement = sidebar.querySelector('sidebar__link-list');
-export const sidebarLinkTrash: HTMLAnchorElement = sidebar.querySelector('sidebar__link-trash');
-export const sidebarLinkSettings: HTMLAnchorElement = sidebar.querySelector('sidebar__link-settings');
 export const modalNewList: HTMLDivElement = document.querySelector('.modal-new-list');
+export const modalNewListForm: HTMLButtonElement = modalNewList.querySelector('.modal__form');
+export const modalNewListInput: HTMLInputElement = modalNewList.querySelector('.modal__input');
 export const modalRenameList: HTMLDivElement = document.querySelector('.modal-rename-list');
+export const modalRenameListForm: HTMLFormElement = modalRenameList.querySelector('.modal__form');
+export const modalRenameListInput: HTMLInputElement = modalRenameList.querySelector('.modal__input');
+export const modalRenameListCancelBtn: Element = modalRenameList.querySelector('.modal__btns').firstElementChild;
+// export const modalRenameListCancelBtn: Element = modalRenameListBtns.firstElementChild;
+// export const modalRenameListRenameBtn: Element = modalRenameListBtns.lastElementChild;
 export const authorization: HTMLDivElement = document.querySelector('.authorization');
 export const authorizationForm: HTMLDivElement = authorization.querySelector('.authorization__form');
 export const authorizationClose: HTMLButtonElement = authorizationForm.querySelector('.authorization__close');
@@ -24,7 +45,15 @@ export const logOut: HTMLDivElement = document.querySelector('.log-out');
 export const logOutEmail: HTMLParagraphElement = document.querySelector('.log-out__email');
 export const logOutBtn: HTMLButtonElement = logOut.querySelector('.log-out__btn');
 export const logOutCloseBtn: HTMLButtonElement = logOut.querySelector('.log-out__close-btn');
-export const listsElem: HTMLDivElement = document.querySelector('.lists');
+export const contentElem: HTMLDivElement = document.querySelector('.content');
+
+// export const trash: HTMLAnchorElement = document.querySelector('.sidebar__link-trash');
+// console.log(trash);
+
+// trash.addEventListener('click', () => {
+//   contentElem.className = 'content list';
+//   render.list(0)
+// });
 
 export function toggleAuthDom(): void {
   console.log(setUser.user);
@@ -47,7 +76,7 @@ export function createElemWithClass(elem: string, elemClass: string): HTMLElemen
   return element;
 }
 
-export function openCloseOptionsEvent(openBtn: Element, optionsElem: Element, optionsElemClass: string) {
+export function openCloseOptionsEvent(openBtn: Element, optionsElem: Element, optionsElemClass: string): void {
   openBtn.addEventListener('click', function openElem() {
     optionsElem.classList.add(`${optionsElemClass}_is-open`);
     openBtn.removeEventListener('click', openElem);
@@ -67,6 +96,20 @@ export function openCloseOptionsEvent(openBtn: Element, optionsElem: Element, op
       });
     });
   });
+}
+
+function deleteListenersFromLists() {
+  const userID: string = (setUser.user as any).uid;
+  firebase
+    .database()
+    .ref(`${userID}/lists`)
+    .get()
+    .then((snapshot) => {
+      const dbListsSnapshot: Ilist[] = snapshot.val();
+      dbListsSnapshot.forEach((list: Ilist, listIndex) => {
+        firebase.database().ref(`${userID}/lists/${listIndex}`).off();
+      });
+    });
 }
 
 export const addEvents: Function = (): void => {
@@ -114,16 +157,53 @@ export const addEvents: Function = (): void => {
   });
 
   modalNewList.addEventListener('click', function (event) {
-    if ((event.target as Element).classList.contains('modal') ) {
+    if ((event.target as Element).classList.contains('modal')) {
       modalNewList.classList.remove('modal_is-open');
       const input: HTMLInputElement = modalNewList.querySelector('.modal__input');
       input.value = '';
     }
   });
 
-  modalRenameList.addEventListener('click', function (event) {
-    if ((event.target as Element).classList.contains('modal') ) {
-      modalRenameList.classList.remove('modal_is-open');
+  sidebar.addEventListener('click', function (event) {
+    const target: Element = event.target as Element;
+    const userID: string = (setUser.user as any).uid;
+
+    if (target.closest('.sidebar__btn-lists')) {
+      if (contentElem.classList.contains('list')) {
+        deleteListenersFromLists();
+      }
+
+      contentElem.className = 'content lists';
+
+      firebase.database().ref(`${userID}/trash`).off();
+
+      firebase
+        .database()
+        .ref(`${userID}/lists`)
+        .on('value', (snapshot) => {
+          const dbListsSnapshot = snapshot.val() || [];
+          render.lists(dbListsSnapshot);
+        });
     }
+
+    if (target.closest('.sidebar__btn-trash')) {
+      if (contentElem.classList.contains('list')) {
+        deleteListenersFromLists();
+      }
+
+      contentElem.className = 'content trash';
+
+      firebase.database().ref(`${userID}/lists`).off();
+
+      firebase
+        .database()
+        .ref(`${userID}/trash`)
+        .on('value', (snapshot) => {
+          const dbTrashLists = snapshot.val() || [];
+          render.trash(dbTrashLists);
+        });
+    }
+
+    if (target.closest('.sidebar__btn-settings')) render.settings;
   });
 };

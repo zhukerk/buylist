@@ -40,6 +40,7 @@ export const setUser: IsetUser = {
           });
       } else {
         contentElem.className = 'content';
+        render.helloScreen();
       }
     });
   },

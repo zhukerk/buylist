@@ -21,6 +21,4 @@ export const init = () => {
   
   setUser.initUser();
   addEvents();
-
-  // render.list('jnnMDhmsAjeXnVpeTlLeSNY8Zdn1', 0);
 };

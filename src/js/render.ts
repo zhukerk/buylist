@@ -15,14 +15,14 @@ import {
   modalRenameListForm,
   modalRenameListInput,
   modalRenameListCancelBtn,
-  addEvents,
 } from './utils';
 
 interface Irender {
   lists(listsArr: Ilist[]): void;
   list(listNumber: number): void;
   trash(trashArr: Ilist[]): void;
-  settings(userID: string): void;
+  settings(): void;
+  helloScreen(): void;
 }
 
 export const render: Irender = {
@@ -90,7 +90,7 @@ export const render: Irender = {
 
       listElem.innerHTML = listElemHTML;
       const progressBlueLine: HTMLElement = listElem.querySelector('.list-elem__progress_blue');
-      progressBlueLine.style.width = ((purchaseLength / numberItems) || 1) * 100 + '%';
+      progressBlueLine.style.width = (purchaseLength / numberItems || 1) * 100 + '%';
 
       const options: HTMLDivElement = listElem.querySelector('.list-elem__options');
       const optionsList: HTMLDivElement = listElem.querySelector('.list-elem__options-list');
@@ -171,8 +171,39 @@ export const render: Irender = {
 
   list(listNumber) {
     const userID: string = (setUser.user as any).uid;
-
     firebase.database().ref(`${userID}/lists`).off();
+
+    contentElem.innerHTML = `
+    <input type="text" class="shoplist__name">
+    <form class="shoplist__add-item">
+      <label class="shoplist__add-input-label" for="add-item">+</label>
+      <input type="text" name="add-item" id="add-item" class="shoplist__add-input" placeholder="Add item" />
+    </form>
+    <ul class="shoplist__to-buy"></ul>
+    <ul class="shoplist__purchase"></ul>
+  `;
+
+    const shoplistAddItem: HTMLFormElement = contentElem.querySelector('.shoplist__add-item');
+    const shoplistAddInput: HTMLInputElement = shoplistAddItem.querySelector('.shoplist__add-input');
+
+    shoplistAddItem.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      firebase
+        .database()
+        .ref(`${userID}/lists/${listNumber}/items/toBuy`)
+        .get()
+        .then((snapshot) => {
+          const dbListToBuySnapshot: IlistItem[] = snapshot.val() || [];
+
+          const newItem: IlistItem = new ListItem(shoplistAddInput.value);
+          dbListToBuySnapshot.unshift(newItem);
+          firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuySnapshot);
+
+          shoplistAddInput.value = '';
+          shoplistAddInput.focus();
+        });
+    });
 
     firebase
       .database()
@@ -181,39 +212,20 @@ export const render: Irender = {
         const dbListSnapshot: Ilist = snapshot.val();
         const dbListName: string = dbListSnapshot.listName;
         const dbListItems: IlistItems = dbListSnapshot.items;
-        let dbListToBuy: IlistItem[] = [];
-        let dbListPurchased: IlistItem[] = [];
-        if (dbListItems) {
-          dbListToBuy = dbListItems.toBuy || [];
-          dbListPurchased = dbListItems.purchased || [];
-        }
+        const dbListToBuy: IlistItem[] = dbListItems?.toBuy || [];
+        const dbListPurchased: IlistItem[] = dbListItems?.purchased || [];
 
-        contentElem.innerHTML = `
-          <input type="text" class="shoplist__name" value="${dbListName}">
-          <form class="shoplist__add-item">
-            <label class="shoplist__add-input-label" for="add-item">+</label>
-            <input type="text" name="add-item" id="add-item" class="shoplist__add-input" placeholder="Add item" />
-          </form>
-        `;
+        const listNameElem: HTMLInputElement = contentElem.querySelector('.shoplist__name');
+        listNameElem.value = dbListName;
 
         const shoplistNameInput: HTMLInputElement = contentElem.querySelector('.shoplist__name');
         shoplistNameInput.addEventListener('change', function () {
           firebase.database().ref(`${userID}/lists/${listNumber}/listName`).set(shoplistNameInput.value);
         });
 
-        const shoplistAddItem: HTMLFormElement = contentElem.querySelector('.shoplist__add-item');
-        const shoplistAddInput: HTMLInputElement = shoplistAddItem.querySelector('.shoplist__add-input');
-        shoplistAddItem.addEventListener('submit', function (event) {
-          event.preventDefault();
-
-          const newItem: IlistItem = new ListItem(shoplistAddInput.value);
-          dbListToBuy.unshift(newItem);
-          firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuy);
-        });
-
+        const shoplistToBuyElem: HTMLUListElement = contentElem.querySelector('.shoplist__to-buy');
+        shoplistToBuyElem.innerHTML = '';
         if (dbListToBuy.length) {
-          const shoplistToBuyElem: Element = createElemWithClass('ul', 'shoplist__to-buy');
-
           dbListToBuy.forEach((listItem: IlistItem, listItemIndex) => {
             const shoplistItemElem: Element = createElemWithClass('li', 'shoplist__item');
 
@@ -228,7 +240,7 @@ export const render: Irender = {
               </div>
               <div class="shoplist__item-info">
                 <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_minus">-</button>
-                <span class="shoplist__item-quantity">${listItem.quantity}</span>
+                <input type="number" max="99999" class="shoplist__item-quantity" value="${listItem.quantity}">
                 <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_plus">+</button>
                 <select name="unit-1" id="unit-1" class="shoplist__item-unit">
                   <option value="pcs">pcs</option>
@@ -241,6 +253,76 @@ export const render: Irender = {
                 </button>
               </div>
             `;
+
+            const checkbox: HTMLInputElement = shoplistItemElem.querySelector(`#add-item-${listItemIndex}`);
+            checkbox.addEventListener('change', function () {
+              dbListToBuy.splice(listItemIndex, 1);
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuy);
+
+              dbListPurchased.unshift(listItem);
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/purchased`).set(dbListPurchased);
+            });
+
+            const quantityInput: HTMLInputElement = shoplistItemElem.querySelector('.shoplist__item-quantity');
+            quantityInput.addEventListener('change', function () {
+              let value: number = +quantityInput.value;
+
+              if (value > 0) {
+                if (!Number.isInteger(value)) {
+                  value = +value.toFixed(1);
+                }
+
+                if (value > 9999.9) {
+                  value = 9999;
+                }
+              } else {
+                value = 1;
+              }
+
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/quantity`).set(value);
+            });
+
+            const quantityBtnMinus: HTMLButtonElement = shoplistItemElem.querySelector(
+              '.shoplist__item-quantity-btn_minus'
+            );
+
+            quantityBtnMinus.addEventListener('click', function (event) {
+              event.preventDefault();
+
+              if (+quantityInput.value > 1) {
+                let newValue: string = (+quantityInput.value - 1).toString();
+
+                if (new Set([...newValue]).has('.')) {
+                  newValue = (+newValue).toFixed(1);
+                }
+
+                firebase
+                  .database()
+                  .ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/quantity`)
+                  .set(newValue);
+              }
+            });
+
+            const quantityBtnPlus: HTMLButtonElement = shoplistItemElem.querySelector(
+              '.shoplist__item-quantity-btn_plus'
+            );
+
+            quantityBtnPlus.addEventListener('click', function (event) {
+              event.preventDefault();
+
+              let newValue: string = (+quantityInput.value + 1).toString();
+
+              if (new Set([...newValue]).has('.')) {
+                newValue = (+newValue).toFixed(1);
+              }
+
+              if (+newValue < 9999) {
+                firebase
+                  .database()
+                  .ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/quantity`)
+                  .set(newValue);
+              }
+            });
 
             const options: Element[] = [...shoplistItemElem.querySelectorAll('option')];
             options.map((elem) => {
@@ -259,13 +341,11 @@ export const render: Irender = {
 
             shoplistToBuyElem.insertAdjacentElement('beforeend', shoplistItemElem);
           });
-
-          contentElem.insertAdjacentElement('beforeend', shoplistToBuyElem);
         }
 
+        const shoplistPurchasedElem: HTMLUListElement = contentElem.querySelector('.shoplist__purchase');
+        shoplistPurchasedElem.innerHTML = '';
         if (dbListPurchased.length) {
-          const shoplistPurchasedElem: Element = createElemWithClass('ul', 'shoplist__purchase');
-
           dbListPurchased.forEach((listItem: IlistItem, listItemIndex) => {
             const shoplistItemElem: Element = createElemWithClass('li', 'shoplist__item shoplist__item_purchase');
             const addItemID: number = dbListToBuy.length + listItemIndex;
@@ -285,6 +365,15 @@ export const render: Irender = {
               </div>
             `;
 
+            const checkbox: HTMLInputElement = shoplistItemElem.querySelector(`#add-item-${addItemID}`);
+            checkbox.addEventListener('change', function () {
+              dbListPurchased.splice(listItemIndex, 1);
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/purchased`).set(dbListPurchased);
+
+              dbListToBuy.push(listItem);
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuy);
+            });
+
             const deleteBtn: Element = shoplistItemElem.querySelector('.shoplist__item-delete');
             deleteBtn.addEventListener('click', function (event) {
               event.preventDefault();
@@ -295,79 +384,8 @@ export const render: Irender = {
 
             shoplistPurchasedElem.insertAdjacentElement('beforeend', shoplistItemElem);
           });
-
-          contentElem.insertAdjacentElement('beforeend', shoplistPurchasedElem);
         }
       });
-
-    // firebase
-    //   .database()
-    //   .ref(`${userID}/lists/${listNumber}`)
-    //   .get()
-    //   .then((snapshot) => {
-    //     const list: Ilist = (dbListItems = snapshot.val() || []);
-    //     dbListItems = list.items;
-    //     dbListName = list.listName;
-
-    //     contentElem.innerHTML = `
-    //       <div class="shoplist__name">${dbListName}</div>
-    //       <div class="shoplist__add-item">
-    //         <label class="shoplist__add-input-label" for="add-item">+</label>
-    //         <input type="text" name="add-item" id="add-item" class="shoplist__add-input" placeholder="Add item" />
-    //       </div>
-    //       `;
-
-    //     const shoplistList: Element = createElemWithClass('ul', 'shoplist__list');
-
-    //     dbListItems.forEach((item: IlistItem) => {
-    //       const shoplistItem: Element = createElemWithClass('li', 'shoplist__item');
-
-    //       shoplistItem.innerHTML = `
-    //         <div class="shoplist__item-name">
-    //           <input class="checkbox" type="checkbox" name="add-item-1" id="add-item-1" />
-    //           <label class="checkbox__label" for="add-item-1"></label>
-    //           <span class="shoplist__item-name-text">
-    //             ${item.itemName}
-    //           </span>
-    //           <button class="drop">
-    //             <span></span>
-    //           </button>
-    //         </div>
-    //         <div class="shoplist__item-info">
-    //           <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_minus">-</button>
-    //           <span class="shoplist__item-quantity">
-    //             ${item.quantity}
-    //           </span>
-    //           <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_plus">+</button>
-    //           <select name="unit-1" id="unit-1" class="shoplist__item-unit">
-    //             <option value="pcs">pcs</option>
-    //             <option value="kg">kg</option>
-    //             <option value="lit">lit</option>
-    //           </select>
-    //           <button class="shoplist__item-delete">
-    //             <img src="./img/trash.svg" alt="" class="shoplist__item-delete-img" />
-    //           </button>
-    //         </div>
-    //       `;
-
-    //       const options: Element[] = [...shoplistItem.querySelectorAll('option')];
-    //       options.map((elem) => {
-    //         if (elem.innerHTML === (item as IlistItem).unit) {
-    //           elem.setAttribute('selected', 'selected');
-    //         }
-    //       });
-
-    //       shoplistList.insertAdjacentElement('beforeend', shoplistItem);
-    //     });
-
-    //     contentElem.insertAdjacentElement('beforeend', shoplistList);
-    //   });
-
-    // .on('value', (snapshot) => {
-    //   const list: object = (dbListItems = snapshot.val());
-    //   dbListItems = (list as any).items;
-    //   dbListName = (list as any).listName;
-    // });
   },
 
   trash(trashArr) {
@@ -443,5 +461,59 @@ export const render: Irender = {
     });
   },
 
-  settings(userID) {},
+  settings() {
+    contentElem.innerHTML = `
+      <div class="settings__acc">
+        <div class="settings__acc-info">
+          <div class="settings__acc-name">${(setUser.user as any).displayName}</div>
+          <div class="settings__acc-email">${(setUser.user as any).email}</div>
+        </div>
+        <div class="settings__acc-text">Change your name:</div>
+        <div class="settings__acc-name-change-wrapper">
+          <input type="text" name="acc-name" id="acc-name" class="settings__acc-name-change" 
+          value="${(setUser.user as any).displayName}"/>
+        </div>
+      </div>
+  `;
+
+    const nameInput: HTMLInputElement = contentElem.querySelector('.settings__acc-name-change');
+    const accNameElement: HTMLDivElement = contentElem.querySelector('.settings__acc-name');
+
+    nameInput.addEventListener('change', function (event) {
+      event.preventDefault();
+
+      accNameElement.innerHTML = nameInput.value;
+      (setUser.user as any).updateProfile({ displayName: nameInput.value });
+    });
+  },
+
+  helloScreen() {
+    contentElem.innerHTML = `
+    <section class="hello">
+      <p class="hello__text">Здравствуйте, этот проект создан с применением:</p>
+      <h3 class="hello__technologies">
+        TypeScript, Webpack 4, Gulp, SCSS, Git, БЭМ, Firebase (Authentication, Realtime Database).
+      </h3>
+      <p class="hello__text">
+        Для того, чтобы оценить функционал, пожалуйста, авторизируйтесь или нажмите кнопку ниже. Спасибо за внимание.
+      </p>
+      <button class="hello__btn">Try with test account</button>
+    </section>
+  `;
+
+    const button: HTMLButtonElement = contentElem.querySelector('.hello__btn');
+    button.addEventListener('click', function () {
+      // testtest@test.test
+      firebase
+        .auth()
+        .signInWithEmailAndPassword('testtest@test.test', 'testtest@test.test')
+        .catch((err) => {
+          const errMessage = err.message;
+
+          alert(errMessage);
+          console.log(err);
+          
+        });
+    });
+  },
 };

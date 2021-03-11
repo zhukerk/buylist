@@ -1,19 +1,11 @@
-<div class="content settings">
-  <div class="settings__acc">
-    <div class="settings__acc-info">
-      <div class="settings__acc-name">wesadfsda sfldkjsb adkhfiausd gfouag eofygas oduyfgaus grfoyar g</div>
-      <div class="settings__acc-email">wesadfsda@email</div>
-    </div>
-    <div class="settings__acc-text">Change your name:</div>
-    <div class="settings__acc-name-change-wrapper">
-      <input type="text" name="acc-name" id="acc-name" class="settings__acc-name-change" />
-    </div>
+<div class="settings__acc">
+  <div class="settings__acc-info">
+    <div class="settings__acc-name">${(setUser.user as any).displayName}</div>
+    <div class="settings__acc-email">${(setUser.user as any).email}</div>
   </div>
-
-  <div class="settings__item">
-    Multiply prices by quantity
-
-    <input class="checkbox" type="checkbox" name="multiplyPrice" id="multiplyPrice"/>
-    <label class="checkbox__label" for="multiplyPrice"></label>
+  <div class="settings__acc-text">Change your name:</div>
+  <div class="settings__acc-name-change-wrapper">
+    <input type="text" name="acc-name" id="acc-name" class="settings__acc-name-change" 
+    value="${(setUser.user as any).displayName}"/>
   </div>
 </div>

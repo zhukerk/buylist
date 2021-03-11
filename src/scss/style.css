@@ -921,8 +921,60 @@ body {
   display: flex;
 }
 
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+input[type='number']:hover,
+input[type='number']:focus {
+  -moz-appearance: number-input;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.hello {
+  padding: 20px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.hello__technologies {
+  margin: 7px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hello__btn {
+  display: block;
+  margin: 20px auto;
+  padding: 10px;
+  border-radius: 7px;
+  background-color: #7d93c8;
+  -webkit-transition: all 0.2s linear;
+  -o-transition: all 0.2s linear;
+  transition: all 0.2s linear;
+}
+
+.hello__btn:hover {
+  -webkit-box-shadow: 0 0 5px #000;
+          box-shadow: 0 0 5px #000;
+}
+
 @media (max-width: 1023px) {
   .sidebar {
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    transition: all 0.2s linear;
     left: -550px;
   }
 

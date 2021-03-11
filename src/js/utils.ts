@@ -22,7 +22,8 @@ export const regExpValidEmail: RegExp = /^\w+@\w+\.\w{2,}$/;
 
 const header: HTMLHeadElement = document.querySelector('.header');
 export const burgerMenuCheckbox: HTMLInputElement = header.querySelector('#burger-menu__toggle');
-export const burgerMenuLabel: HTMLInputElement = header.querySelector('.burger-menu__btn');
+export const modalSidebar: HTMLUListElement = header.querySelector('.modal-sidebar');
+export const modalSidebarList: HTMLUListElement = header.querySelector('.modal-sidebar__list');
 export const headerAuthorization: HTMLButtonElement = header.querySelector('.header__authorization');
 export const userBtn: HTMLButtonElement = header.querySelector('.user');
 export const sidebar: HTMLElement = document.querySelector('.sidebar');
@@ -115,13 +116,74 @@ function deleteListenersFromLists() {
 }
 
 export const addEvents: Function = (): void => {
-  burgerMenuCheckbox.addEventListener('change', function () {
-    if (burgerMenuCheckbox.checked) {
-      sidebar.style.left = '0';
-    } else {
-      sidebar.style.left = '-550px';
+  modalSidebar.addEventListener('click', function (event) {
+    const target: Element = event.target as Element;
+    const userID: string = (setUser.user as any).uid;
+    
+    if (target !== modalSidebarList) {
+      burgerMenuCheckbox.checked = false;
+    }
+
+    if (contentElem.classList.contains('lists')) {
+      const addListBtn: HTMLButtonElement = contentElem.querySelector('.add-list-btn');
+      addListBtn.style.zIndex = '2';
+    }
+
+    if (target.closest('.sidebar__btn-lists')) {
+      if (contentElem.classList.contains('list')) {
+        deleteListenersFromLists();
+      }
+
+      contentElem.className = 'content lists';
+
+      firebase.database().ref(`${userID}/trash`).off();
+
+      firebase
+        .database()
+        .ref(`${userID}/lists`)
+        .on('value', (snapshot) => {
+          const dbListsSnapshot = snapshot.val() || [];
+          render.lists(dbListsSnapshot);
+        });
+    }
+
+    if (target.closest('.sidebar__btn-trash')) {
+      if (contentElem.classList.contains('list')) {
+        deleteListenersFromLists();
+      }
+
+      contentElem.className = 'content trash';
+
+      firebase.database().ref(`${userID}/lists`).off();
+
+      firebase
+        .database()
+        .ref(`${userID}/trash`)
+        .on('value', (snapshot) => {
+          const dbTrashLists = snapshot.val() || [];
+          render.trash(dbTrashLists);
+        });
+    }
+
+    if (target.closest('.sidebar__btn-settings')) {
+      if (contentElem.classList.contains('list')) {
+        deleteListenersFromLists();
+      }
+
+      firebase.database().ref(`${userID}/trash`).off();
+
+      contentElem.className = 'content settings';
+
+      render.settings();
     }
   });
+
+  burgerMenuCheckbox.addEventListener('change', function () {
+    if (contentElem.classList.contains('lists')) {
+      const addListBtn: HTMLButtonElement = contentElem.querySelector('.add-list-btn');
+      addListBtn.style.zIndex = '0';
+    }
+  })
 
   headerAuthorization.addEventListener('click', function (event) {
     authorization.classList.add('authorization_is-open');
@@ -182,10 +244,6 @@ export const addEvents: Function = (): void => {
       if (contentElem.classList.contains('list')) {
         deleteListenersFromLists();
       }
-      if (burgerMenuCheckbox.checked) {
-        burgerMenuCheckbox.checked = false;
-        sidebar.style.left = '-550px';
-      }
 
       contentElem.className = 'content lists';
 
@@ -204,10 +262,6 @@ export const addEvents: Function = (): void => {
       if (contentElem.classList.contains('list')) {
         deleteListenersFromLists();
       }
-      if (burgerMenuCheckbox.checked) {
-        burgerMenuCheckbox.checked = false;
-        sidebar.style.left = '-550px';
-      }
 
       contentElem.className = 'content trash';
 
@@ -225,10 +279,6 @@ export const addEvents: Function = (): void => {
     if (target.closest('.sidebar__btn-settings')) {
       if (contentElem.classList.contains('list')) {
         deleteListenersFromLists();
-      }
-      if (burgerMenuCheckbox.checked) {
-        burgerMenuCheckbox.checked = false;
-        sidebar.style.left = '-550px';
       }
 
       firebase.database().ref(`${userID}/trash`).off();

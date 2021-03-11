@@ -188,6 +188,7 @@ export const render: Irender = {
 
     shoplistAddItem.addEventListener('submit', function (event) {
       event.preventDefault();
+      if (!shoplistAddInput.value.trim()) return;
 
       firebase
         .database()
@@ -229,6 +230,7 @@ export const render: Irender = {
           dbListToBuy.forEach((listItem: IlistItem, listItemIndex) => {
             const shoplistItemElem: Element = createElemWithClass('li', 'shoplist__item');
 
+            // <input type="text" class="shoplist__item-name-text" value="${listItem.itemName}">
             shoplistItemElem.innerHTML = `
               <div class="shoplist__item-name">
                 <input class="checkbox" type="checkbox" name="add-item-${listItemIndex}" id="add-item-${listItemIndex}" />
@@ -261,6 +263,31 @@ export const render: Irender = {
 
               dbListPurchased.unshift(listItem);
               firebase.database().ref(`${userID}/lists/${listNumber}/items/purchased`).set(dbListPurchased);
+            });
+
+            const itemNameText: HTMLSpanElement = shoplistItemElem.querySelector('.shoplist__item-name-text');
+            itemNameText.addEventListener('click', function () {
+              itemNameText.innerHTML = `<input type="text" class="shoplist__item-name-text-input" value="${listItem.itemName}">`;
+
+              const input: HTMLInputElement = itemNameText.querySelector('.shoplist__item-name-text-input');
+              input.focus();
+
+              input.addEventListener('change', function () {
+                firebase
+                  .database()
+                  .ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/itemName`)
+                  .set(input.value);
+              });
+
+              input.addEventListener('blur', function () {
+                itemNameText.innerHTML = listItem.itemName;
+              });
+
+              input.addEventListener('keydown', function (event) {
+                if (event.keyCode === 13) {
+                  itemNameText.innerHTML = listItem.itemName;
+                }
+              });
             });
 
             const quantityInput: HTMLInputElement = shoplistItemElem.querySelector('.shoplist__item-quantity');
@@ -512,7 +539,6 @@ export const render: Irender = {
 
           alert(errMessage);
           console.log(err);
-          
         });
     });
   },

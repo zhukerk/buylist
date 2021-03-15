@@ -8,58 +8,42 @@ import {
   modalNewListInput,
   createElemWithClass,
   openCloseOptionsEvent,
-  IlistItems,
-  IlistItem,
-  Ilist,
   modalRenameList,
   modalRenameListForm,
   modalRenameListInput,
   modalRenameListCancelBtn,
 } from './utils';
 
-interface Irender {
-  lists(listsArr: Ilist[]): void;
-  list(listNumber: number): void;
-  trash(trashArr: Ilist[]): void;
-  settings(): void;
-  helloScreen(): void;
-}
+import { IlistItems, IlistItem, Ilist, Irender, Iuser } from './interfaces';
 
 export const render: Irender = {
   lists(listsArr) {
-    const userID: string = (setUser.user as any).uid;
+    const userID: string = (setUser.user as Iuser).uid;
 
     contentElem.innerHTML = '';
 
     const addListBtn: HTMLElement = createElemWithClass('button', 'add-list-btn');
+
     addListBtn.innerHTML = '+';
     contentElem.append(addListBtn);
-    addListBtn.addEventListener('click', function (event) {
+    addListBtn.addEventListener('click', (event) => {
       event.preventDefault();
       modalNewList.classList.add('modal_is-open');
       modalNewListInput.focus();
 
       modalNewListForm.addEventListener('submit', function CreateNewList(event) {
         event.preventDefault();
+        if (!modalNewListInput.value.trim()) return;
 
-        firebase
-          .database()
-          .ref(`${userID}/lists`)
-          .get()
-          .then((snapshot) => {
-            const dbLists: Ilist[] = snapshot.val() || [];
-            const newListName: string = modalNewListInput.value;
-            const newList: Ilist = new List(newListName);
+        const newListName: string = modalNewListInput.value.replace(/\s+/g, ' ').trim();
+        const newList: Ilist = new List(newListName);
+        listsArr.unshift(newList);
 
-            dbLists.unshift(newList);
-            console.log(dbLists);
+        firebase.database().ref(`${userID}/lists`).set(listsArr);
 
-            firebase.database().ref(`${userID}/lists`).set(dbLists);
-
-            modalNewListInput.value = '';
-            modalNewListForm.removeEventListener('submit', CreateNewList);
-            modalNewList.classList.remove('modal_is-open');
-          });
+        modalNewListInput.value = '';
+        modalNewListForm.removeEventListener('submit', CreateNewList);
+        modalNewList.classList.remove('modal_is-open');
       });
     });
 
@@ -89,20 +73,39 @@ export const render: Irender = {
       `;
 
       listElem.innerHTML = listElemHTML;
-      const progressBlueLine: HTMLElement = listElem.querySelector('.list-elem__progress_blue');
-      progressBlueLine.style.width = (purchaseLength / numberItems || 1) * 100 + '%';
 
+      const progressBlueLine: HTMLElement = listElem.querySelector('.list-elem__progress_blue');
       const options: HTMLDivElement = listElem.querySelector('.list-elem__options');
       const optionsList: HTMLDivElement = listElem.querySelector('.list-elem__options-list');
       const renameListBtn: Element = optionsList.firstElementChild;
       const deleteListBtn: Element = optionsList.lastElementChild;
 
+      progressBlueLine.style.width = (purchaseLength / numberItems || 1) * 100 + '%';
+
       openCloseOptionsEvent(options, optionsList, 'list-elem__options-list');
 
       contentElem.insertAdjacentElement('beforeend', listElem);
 
-      renameListBtn.addEventListener('click', function (event) {
+      renameListBtn.addEventListener('click', (event) => {
         event.preventDefault();
+
+        optionsList.classList.remove('list-elem__options-list_is-open');
+        modalRenameList.classList.add('modal_is-open');
+        modalRenameListInput.value = list.listName;
+
+        modalRenameListForm.addEventListener('submit', renameListFunc);
+
+        modalRenameListCancelBtn.addEventListener('click', () => {
+          modalRenameList.classList.remove('modal_is-open');
+          modalRenameListForm.removeEventListener('submit', renameListFunc);
+        });
+
+        modalRenameList.addEventListener('click', (event) => {
+          if ((event.target as Element).classList.contains('modal')) {
+            modalRenameList.classList.remove('modal_is-open');
+            modalRenameListForm.removeEventListener('submit', renameListFunc);
+          }
+        });
 
         function renameListFunc(e: Event) {
           e.preventDefault();
@@ -114,39 +117,15 @@ export const render: Irender = {
           modalRenameList.classList.remove('modal_is-open');
           modalRenameListForm.removeEventListener('submit', renameListFunc);
         }
-
-        optionsList.classList.remove('list-elem__options-list_is-open');
-        modalRenameList.classList.add('modal_is-open');
-        modalRenameListInput.value = list.listName;
-
-        modalRenameListForm.addEventListener('submit', renameListFunc);
-
-        modalRenameListCancelBtn.addEventListener('click', function () {
-          modalRenameList.classList.remove('modal_is-open');
-          modalRenameListForm.removeEventListener('submit', renameListFunc);
-        });
-
-        modalRenameList.addEventListener('click', function (event) {
-          if ((event.target as Element).classList.contains('modal')) {
-            modalRenameList.classList.remove('modal_is-open');
-            modalRenameListForm.removeEventListener('submit', renameListFunc);
-          }
-        });
       });
 
-      deleteListBtn.addEventListener('click', function (event) {
+      deleteListBtn.addEventListener('click', (event) => {
         event.preventDefault();
+
         optionsList.classList.remove('list-elem__options-list_is-open');
 
-        firebase
-          .database()
-          .ref(`${userID}/lists`)
-          .get()
-          .then((snapshot) => {
-            const dbListsSnapshot: Ilist[] = snapshot.val() || [];
-            dbListsSnapshot.splice(listIndex, 1);
-            firebase.database().ref(`${userID}/lists`).set(dbListsSnapshot);
-          });
+        listsArr.splice(listIndex, 1);
+        firebase.database().ref(`${userID}/lists`).set(listsArr);
 
         firebase
           .database()
@@ -163,14 +142,13 @@ export const render: Irender = {
         if (!(event.target as HTMLElement).closest('.list-elem__options')) {
           contentElem.className = 'content list';
           render.list(listIndex);
-          listElem.removeEventListener('click', renderThisList);
         }
       });
     });
   },
 
   list(listNumber) {
-    const userID: string = (setUser.user as any).uid;
+    const userID: string = (setUser.user as Iuser).uid;
     firebase.database().ref(`${userID}/lists`).off();
 
     contentElem.innerHTML = `
@@ -186,8 +164,9 @@ export const render: Irender = {
     const shoplistAddItem: HTMLFormElement = contentElem.querySelector('.shoplist__add-item');
     const shoplistAddInput: HTMLInputElement = shoplistAddItem.querySelector('.shoplist__add-input');
 
-    shoplistAddItem.addEventListener('submit', function (event) {
+    shoplistAddItem.addEventListener('submit', (event) => {
       event.preventDefault();
+
       if (!shoplistAddInput.value.trim()) return;
 
       firebase
@@ -197,7 +176,7 @@ export const render: Irender = {
         .then((snapshot) => {
           const dbListToBuySnapshot: IlistItem[] = snapshot.val() || [];
 
-          const newItem: IlistItem = new ListItem(shoplistAddInput.value);
+          const newItem: IlistItem = new ListItem(shoplistAddInput.value.replace(/\s+/g, ' ').trim());
           dbListToBuySnapshot.unshift(newItem);
           firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuySnapshot);
 
@@ -215,22 +194,19 @@ export const render: Irender = {
         const dbListItems: IlistItems = dbListSnapshot.items;
         const dbListToBuy: IlistItem[] = dbListItems?.toBuy || [];
         const dbListPurchased: IlistItem[] = dbListItems?.purchased || [];
-
-        const listNameElem: HTMLInputElement = contentElem.querySelector('.shoplist__name');
-        listNameElem.value = dbListName;
-
         const shoplistNameInput: HTMLInputElement = contentElem.querySelector('.shoplist__name');
-        shoplistNameInput.addEventListener('change', function () {
+        const shoplistToBuyElem: HTMLUListElement = contentElem.querySelector('.shoplist__to-buy');
+
+        shoplistNameInput.value = dbListName;
+        shoplistNameInput.addEventListener('change', () => {
           firebase.database().ref(`${userID}/lists/${listNumber}/listName`).set(shoplistNameInput.value);
         });
 
-        const shoplistToBuyElem: HTMLUListElement = contentElem.querySelector('.shoplist__to-buy');
         shoplistToBuyElem.innerHTML = '';
         if (dbListToBuy.length) {
           dbListToBuy.forEach((listItem: IlistItem, listItemIndex) => {
             const shoplistItemElem: Element = createElemWithClass('li', 'shoplist__item');
 
-            // <input type="text" class="shoplist__item-name-text" value="${listItem.itemName}">
             shoplistItemElem.innerHTML = `
               <div class="shoplist__item-name">
                 <input class="checkbox" type="checkbox" name="add-item-${listItemIndex}" id="add-item-${listItemIndex}" />
@@ -244,7 +220,7 @@ export const render: Irender = {
                 <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_minus">-</button>
                 <input type="number" max="99999" class="shoplist__item-quantity" value="${listItem.quantity}">
                 <button class="shoplist__item-quantity-btn shoplist__item-quantity-btn_plus">+</button>
-                <select name="unit-1" id="unit-1" class="shoplist__item-unit">
+                <select name="unit-${listItemIndex}" id="unit-${listItemIndex}" class="shoplist__item-unit">
                   <option value="pcs">pcs</option>
                   <option value="kg">kg</option>
                   <option value="gr">gr</option>
@@ -257,7 +233,19 @@ export const render: Irender = {
             `;
 
             const checkbox: HTMLInputElement = shoplistItemElem.querySelector(`#add-item-${listItemIndex}`);
-            checkbox.addEventListener('change', function () {
+            const itemNameText: HTMLSpanElement = shoplistItemElem.querySelector('.shoplist__item-name-text');
+            const quantityInput: HTMLInputElement = shoplistItemElem.querySelector('.shoplist__item-quantity');
+            const quantityBtnMinus: HTMLButtonElement = shoplistItemElem.querySelector(
+              '.shoplist__item-quantity-btn_minus'
+            );
+            const quantityBtnPlus: HTMLButtonElement = shoplistItemElem.querySelector(
+              '.shoplist__item-quantity-btn_plus'
+            );
+            const options: Element[] = [...shoplistItemElem.querySelectorAll('option')];
+            const shoplistItemUnit: HTMLSelectElement = shoplistItemElem.querySelector('.shoplist__item-unit');
+            const deleteBtn: Element = shoplistItemElem.querySelector('.shoplist__item-delete');
+
+            checkbox.addEventListener('change', () => {
               dbListToBuy.splice(listItemIndex, 1);
               firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuy);
 
@@ -265,33 +253,44 @@ export const render: Irender = {
               firebase.database().ref(`${userID}/lists/${listNumber}/items/purchased`).set(dbListPurchased);
             });
 
-            const itemNameText: HTMLSpanElement = shoplistItemElem.querySelector('.shoplist__item-name-text');
-            itemNameText.addEventListener('click', function () {
+            itemNameText.addEventListener('click', function itemNameTextClick() {
+              itemNameText.removeEventListener('click', itemNameTextClick);
               itemNameText.innerHTML = `<input type="text" class="shoplist__item-name-text-input" value="${listItem.itemName}">`;
 
               const input: HTMLInputElement = itemNameText.querySelector('.shoplist__item-name-text-input');
               input.focus();
 
-              input.addEventListener('change', function () {
+              input.addEventListener('change', () => {
+                const newInputName: string = input.value.replace(/\s+/g, ' ').trim();
+
                 firebase
                   .database()
                   .ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/itemName`)
-                  .set(input.value);
+                  .set(newInputName);
               });
 
-              input.addEventListener('blur', function () {
-                itemNameText.innerHTML = listItem.itemName;
-              });
-
-              input.addEventListener('keydown', function (event) {
+              input.addEventListener('keydown', (event) => {
                 if (event.keyCode === 13) {
-                  itemNameText.innerHTML = listItem.itemName;
+                  if (input.value === listItem.itemName) {
+                    notChangedValue();
+                  }
                 }
               });
+
+              input.addEventListener('blur', notChangedValue);
+
+              function notChangedValue() {
+                itemNameText.innerHTML = '';
+                itemNameText.innerHTML = listItem.itemName;
+                itemNameText.addEventListener('click', itemNameTextClick);
+              }
             });
 
-            const quantityInput: HTMLInputElement = shoplistItemElem.querySelector('.shoplist__item-quantity');
-            quantityInput.addEventListener('change', function () {
+            quantityInput.addEventListener('focus', () => {
+              quantityInput.select();
+            })
+
+            quantityInput.addEventListener('change', () => {
               let value: number = +quantityInput.value;
 
               if (value > 0) {
@@ -309,11 +308,7 @@ export const render: Irender = {
               firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/quantity`).set(value);
             });
 
-            const quantityBtnMinus: HTMLButtonElement = shoplistItemElem.querySelector(
-              '.shoplist__item-quantity-btn_minus'
-            );
-
-            quantityBtnMinus.addEventListener('click', function (event) {
+            quantityBtnMinus.addEventListener('click', (event) => {
               event.preventDefault();
 
               if (+quantityInput.value > 1) {
@@ -330,11 +325,7 @@ export const render: Irender = {
               }
             });
 
-            const quantityBtnPlus: HTMLButtonElement = shoplistItemElem.querySelector(
-              '.shoplist__item-quantity-btn_plus'
-            );
-
-            quantityBtnPlus.addEventListener('click', function (event) {
+            quantityBtnPlus.addEventListener('click', (event) => {
               event.preventDefault();
 
               let newValue: string = (+quantityInput.value + 1).toString();
@@ -351,15 +342,19 @@ export const render: Irender = {
               }
             });
 
-            const options: Element[] = [...shoplistItemElem.querySelectorAll('option')];
-            options.map((elem) => {
+            options.forEach((elem) => {
               if (elem.innerHTML === (listItem as IlistItem).unit) {
                 elem.setAttribute('selected', 'selected');
               }
             });
 
-            const deleteBtn: Element = shoplistItemElem.querySelector('.shoplist__item-delete');
-            deleteBtn.addEventListener('click', function (event) {
+            shoplistItemUnit.addEventListener('change', (event) => {
+              const newUnit: string = (event.target as HTMLOptionElement).value;
+
+              firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy/${listItemIndex}/unit`).set(newUnit);
+            });
+
+            deleteBtn.addEventListener('click', (event) => {
               event.preventDefault();
 
               dbListToBuy.splice(listItemIndex, 1);
@@ -393,7 +388,9 @@ export const render: Irender = {
             `;
 
             const checkbox: HTMLInputElement = shoplistItemElem.querySelector(`#add-item-${addItemID}`);
-            checkbox.addEventListener('change', function () {
+            const deleteBtn: Element = shoplistItemElem.querySelector('.shoplist__item-delete');
+
+            checkbox.addEventListener('change', () => {
               dbListPurchased.splice(listItemIndex, 1);
               firebase.database().ref(`${userID}/lists/${listNumber}/items/purchased`).set(dbListPurchased);
 
@@ -401,8 +398,7 @@ export const render: Irender = {
               firebase.database().ref(`${userID}/lists/${listNumber}/items/toBuy`).set(dbListToBuy);
             });
 
-            const deleteBtn: Element = shoplistItemElem.querySelector('.shoplist__item-delete');
-            deleteBtn.addEventListener('click', function (event) {
+            deleteBtn.addEventListener('click', (event) => {
               event.preventDefault();
 
               dbListPurchased.splice(listItemIndex, 1);
@@ -416,7 +412,7 @@ export const render: Irender = {
   },
 
   trash(trashArr) {
-    const userID: string = (setUser.user as any).uid;
+    const userID: string = (setUser.user as Iuser).uid;
 
     contentElem.innerHTML = '';
 
@@ -448,18 +444,11 @@ export const render: Irender = {
 
       contentElem.insertAdjacentElement('beforeend', listElem);
 
-      restoreListBtn.addEventListener('click', function (event) {
+      restoreListBtn.addEventListener('click', (event) => {
         event.preventDefault();
 
-        firebase
-          .database()
-          .ref(`${userID}/trash`)
-          .get()
-          .then((snapshot) => {
-            const dbTrashSnapshot: Ilist[] = snapshot.val() || [];
-            dbTrashSnapshot.splice(listIndex, 1);
-            firebase.database().ref(`${userID}/trash`).set(dbTrashSnapshot);
-          });
+        trashArr.splice(listIndex, 1);
+        firebase.database().ref(`${userID}/trash`).set(trashArr);
 
         firebase
           .database()
@@ -472,33 +461,28 @@ export const render: Irender = {
           });
       });
 
-      deleteListBtn.addEventListener('click', function (event) {
+      deleteListBtn.addEventListener('click', (event) => {
         event.preventDefault();
 
-        firebase
-          .database()
-          .ref(`${userID}/trash`)
-          .get()
-          .then((snapshot) => {
-            const dbTrashSnapshot: Ilist[] = snapshot.val() || [];
-            dbTrashSnapshot.splice(listIndex, 1);
-            firebase.database().ref(`${userID}/trash`).set(dbTrashSnapshot);
-          });
+        trashArr.splice(listIndex, 1);
+        firebase.database().ref(`${userID}/trash`).set(trashArr);
       });
     });
   },
 
   settings() {
+    contentElem.innerHTML = '';
+
     contentElem.innerHTML = `
       <div class="settings__acc">
         <div class="settings__acc-info">
-          <div class="settings__acc-name">${(setUser.user as any).displayName}</div>
-          <div class="settings__acc-email">${(setUser.user as any).email}</div>
+          <div class="settings__acc-name">${(setUser.user as Iuser).displayName}</div>
+          <div class="settings__acc-email">${(setUser.user as Iuser).email}</div>
         </div>
         <div class="settings__acc-text">Change your name:</div>
         <div class="settings__acc-name-change-wrapper">
           <input type="text" name="acc-name" id="acc-name" class="settings__acc-name-change" 
-          value="${(setUser.user as any).displayName}"/>
+          value="${(setUser.user as Iuser).displayName}"/>
         </div>
       </div>
   `;
@@ -506,11 +490,13 @@ export const render: Irender = {
     const nameInput: HTMLInputElement = contentElem.querySelector('.settings__acc-name-change');
     const accNameElement: HTMLDivElement = contentElem.querySelector('.settings__acc-name');
 
-    nameInput.addEventListener('change', function (event) {
+    nameInput.addEventListener('change', (event) => {
       event.preventDefault();
 
-      accNameElement.innerHTML = nameInput.value;
-      (setUser.user as any).updateProfile({ displayName: nameInput.value });
+      (setUser.user as Iuser).updateProfile({ displayName: nameInput.value }).then(() => {
+        accNameElement.innerHTML = nameInput.value;
+        setUser.updateUserInfo();
+      });
     });
   },
 
@@ -529,8 +515,9 @@ export const render: Irender = {
   `;
 
     const button: HTMLButtonElement = contentElem.querySelector('.hello__btn');
-    button.addEventListener('click', function () {
-      // testtest@test.test
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+
       firebase
         .auth()
         .signInWithEmailAndPassword('testtest@test.test', 'testtest@test.test')

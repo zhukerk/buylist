@@ -1,17 +1,7 @@
 import { firebase } from '../index';
 import { regExpValidEmail, toggleAuthDom, logOutEmail, userBtn, contentElem } from './utils';
 import { render } from './render';
-
-interface IsetUser {
-  user: object | null;
-  initUser(): void;
-  signIn(email: string, password: string): void;
-  signUp(email: string, password: string): void;
-  logOut(): void;
-  updateUserInfo(): void;
-  // updateDisplayName(newDisplayName: string): void;
-  sendForget(email: string): void;
-}
+import { IsetUser, Iuser } from './interfaces';
 
 export const setUser: IsetUser = {
   user: null,
@@ -25,7 +15,7 @@ export const setUser: IsetUser = {
           this.updateUserInfo();
         }
 
-        let uid = (setUser.user as any).uid;
+        let uid = (setUser.user as Iuser).uid;
         contentElem.classList.add('lists');
 
         firebase
@@ -35,8 +25,6 @@ export const setUser: IsetUser = {
             let dbLists = snapshot.val() || [];
 
             if (contentElem.classList.contains('lists')) render.lists(dbLists);
-            // render.lists(dbLists)
-            // if (contentElem.classList.contains('list')) render.list(0);
           });
       } else {
         contentElem.className = 'content';
@@ -45,7 +33,7 @@ export const setUser: IsetUser = {
     });
   },
 
-  signIn(email: string, password: string) {
+  signIn(email, password) {
     if (!regExpValidEmail.test(email)) return alert('Email is not valid');
 
     firebase
@@ -65,21 +53,15 @@ export const setUser: IsetUser = {
       });
   },
 
-  signUp(email: string, password: string) {
-    if (!regExpValidEmail.test(email)) {
-      alert('email is not valid');
-      return;
-    }
+  signUp(email, password) {
+    if (!regExpValidEmail.test(email)) return alert('email is not valid');
 
-    if (!email.trim() || !password.trim()) {
-      alert('Введите даные');
-      return;
-    }
+    if (!email.trim() || !password.trim()) return alert('Введите даные');
 
     firebase
       .auth()
       .createUserWithEmailAndPassword(email, password)
-      .then((data) => {
+      .then(() => {
         const userName: string = email.substring(0, email.indexOf('@'));
 
         firebase
@@ -87,18 +69,15 @@ export const setUser: IsetUser = {
           .currentUser.updateProfile({ displayName: userName })
           .then(() => {
             this.updateUserInfo();
-
-            let dbUsers: string[] = [];
-
-            firebase
-              .database()
-              .ref('users')
-              .get()
-              .then((snapshot) => {
-                dbUsers = snapshot.val() || [];
-                dbUsers.push(email);
-                firebase.database().ref(`users`).set(dbUsers);
-              });
+            // firebase
+            //   .database()
+            //   .ref('users')
+            //   .get()
+            //   .then((snapshot) => {
+            //     const dbUsersSnapshot = snapshot.val() || [];
+            //     dbUsersSnapshot.push(email);
+            //     firebase.database().ref(`users`).set(dbUsersSnapshot);
+            //   });
           });
       })
       .catch((err) => {
@@ -110,9 +89,7 @@ export const setUser: IsetUser = {
         } else if (errCode == 'auth/email-already-in-use') {
           alert('Этот email уже используется');
         } else {
-          console.log(err);
-          console.log(errCode);
-          console.log(errMessage);
+          alert(errMessage);
         }
       });
   },
@@ -140,21 +117,7 @@ export const setUser: IsetUser = {
   },
 
   updateUserInfo() {
-    userBtn.innerHTML = (this.user as any).displayName[0].toUpperCase();
+    userBtn.innerHTML = this.user.displayName[0].toUpperCase();
     logOutEmail.innerHTML = this.user.email;
   },
-
-  // updateDisplayName(newDisplayName: string) {
-  //   const oldDisplayName: string | null = this.user.displayName || null;
-
-  //   const updateInfo = (): void => {
-  //     userBtn.innerHTML = (this.user as any).displayName[0].toUpperCase();
-  //   };
-
-  //   if (oldDisplayName === newDisplayName) {
-  //     this.user.updateProfile({ displayName: newDisplayName }).then(updateInfo);
-  //   } else {
-  //     updateInfo();
-  //   }
-  // },
 };

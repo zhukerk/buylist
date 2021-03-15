@@ -532,6 +532,10 @@ body {
 
         line-height: 1.2;
         vertical-align: middle;
+        
+        &-input {
+          width: 100%;
+        }
       }
     }
 

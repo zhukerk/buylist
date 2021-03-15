@@ -663,6 +663,10 @@ body {
   vertical-align: middle;
 }
 
+.shoplist__item-name-text-input {
+  width: 100%;
+}
+
 .shoplist__item-info {
   display: -webkit-box;
   display: -ms-flexbox;

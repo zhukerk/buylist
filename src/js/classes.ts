@@ -1,6 +1,6 @@
-import { IlistItem } from './utils';
+import { IlistItem, Ilist } from './interfaces';
 
-export class List {
+export class List implements Ilist {
   items?: { toBuy?: IlistItem[]; purchased?: IlistItem[] };
   listName: string;
 
@@ -18,7 +18,7 @@ export class List {
   }
 }
 
-export class ListItem {
+export class ListItem implements IlistItem {
   itemName: string;
   quantity: number = 1;
   unit: string  = 'pcs';

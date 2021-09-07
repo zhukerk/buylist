@@ -215,8 +215,6 @@ export const addEvents: Function = (): void => {
       return;
     }
 
-    console.log('sadf');
-
     if (target.closest('.sidebar__btn-lists')) {
       if (contentElem.classList.contains('list')) deleteListenersFromLists();
 
